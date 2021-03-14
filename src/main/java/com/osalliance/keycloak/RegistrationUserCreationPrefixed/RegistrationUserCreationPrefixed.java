@@ -6,6 +6,7 @@ import org.keycloak.authentication.ValidationContext;
 import org.keycloak.authentication.forms.RegistrationPage;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
+import org.keycloak.events.EventBuilder;
 import org.keycloak.events.EventType;
 import org.keycloak.forms.login.LoginFormsProvider;
 import org.keycloak.models.AuthenticationExecutionModel;
@@ -83,9 +84,10 @@ public class RegistrationUserCreationPrefixed implements FormAction {
         if (context.getRealm().isRegistrationEmailAsUsername()) {
             username = email;
         }
-        context.getEvent().detail(Details.USERNAME, username)
-                .detail(Details.REGISTER_METHOD, "form")
-                .detail(Details.EMAIL, email);
+        EventBuilder event = context.getEvent();
+        event.detail(Details.USERNAME, username);
+        event.detail(Details.REGISTER_METHOD, "form");
+        event.detail(Details.EMAIL, email);
 
         UserModel user = context.getSession().users().addUser(context.getRealm(), username);
         user.setEnabled(true);
@@ -97,9 +99,10 @@ public class RegistrationUserCreationPrefixed implements FormAction {
         context.getEvent().user(user);
         context.getEvent().success();
         context.newEvent().event(EventType.LOGIN);
-        context.getEvent().client(context.getAuthenticationSession().getClient().getClientId())
-                .detail(Details.REDIRECT_URI, context.getAuthenticationSession().getRedirectUri())
-                .detail(Details.AUTH_METHOD, context.getAuthenticationSession().getProtocol());
+        EventBuilder event2 =context.getEvent();
+        event2.client(context.getAuthenticationSession().getClient().getClientId());
+        event2.detail(Details.REDIRECT_URI, context.getAuthenticationSession().getRedirectUri());
+        event2.detail(Details.AUTH_METHOD, context.getAuthenticationSession().getProtocol());
         String authType = context.getAuthenticationSession().getAuthNote(Details.AUTH_TYPE);
         if (authType != null) {
             context.getEvent().detail(Details.AUTH_TYPE, authType);
