@@ -10,10 +10,11 @@ import org.keycloak.events.Details;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.models.*;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
-import org.keycloak.services.resources.AttributeFormDataProcessor;
 import org.keycloak.sessions.AuthenticationSessionModel;
-import org.keycloak.userprofile.UserProfileAttributes;
-import org.keycloak.userprofile.profile.representations.AttributeUserProfile;
+import org.keycloak.userprofile.Attributes;
+import org.keycloak.userprofile.UserProfile;
+import org.keycloak.userprofile.UserProfileContext;
+import org.keycloak.userprofile.UserProfileProvider;
 import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
@@ -29,8 +30,8 @@ public class RegistrationUserCreationPrefixedTest {
 
     @Test
     public void test(){
-        AttributeUserProfile userProfile = Mockito.mock(AttributeUserProfile.class);
-        UserProfileAttributes userProfileAttributes = Mockito.mock(UserProfileAttributes.class);
+        UserProfile userProfile = Mockito.mock(UserProfile.class);
+        Attributes userProfileAttributes = Mockito.mock(Attributes.class);
         HttpRequest httpRequest = Mockito.mock(HttpRequest.class);
         FormContext context = Mockito.mock(FormContext.class);
         AuthenticatorConfigModel authenticatorConfigModel = Mockito.mock(AuthenticatorConfigModel.class);
@@ -40,9 +41,7 @@ public class RegistrationUserCreationPrefixedTest {
         UserModel userModel = Mockito.mock(UserModel.class);
         AuthenticationSessionModel authenticationSessionModel = Mockito.mock(AuthenticationSessionModel.class);
         ClientModel clientModel = Mockito.mock(ClientModel.class);
-
-        MockedStatic<AttributeFormDataProcessor> mocked = mockStatic(AttributeFormDataProcessor.class);
-
+        UserProfileProvider userProfileProvider = Mockito.mock(UserProfileProvider.class);
 
         MultivaluedMap<String,String> formData = Mockito.mock(MultivaluedMap.class);
 
@@ -60,18 +59,24 @@ public class RegistrationUserCreationPrefixedTest {
 
         when(httpRequest.getDecodedFormParameters()).thenReturn(formData);
 
+        when(formData.getFirst(Details.USERNAME)).thenReturn(username);
+        when(formData.getFirst(Details.EMAIL)).thenReturn(email);
+
         when(eventBuilder.detail(Details.REGISTER_METHOD, "form")).thenReturn(eventBuilder);
         when(eventBuilder.detail(Details.EMAIL, email)).thenReturn(eventBuilder);
         when(eventBuilder.detail(Details.USERNAME, username)).thenReturn(eventBuilder);
         when(eventBuilder.detail(Details.REDIRECT_URI, eq(anyString()) )).thenReturn(eventBuilder);
         when(eventBuilder.detail(Details.USERNAME, eq(anyString()))).thenReturn(eventBuilder);
 
+        when(keycloakSession.getProvider(UserProfileProvider.class)).thenReturn(userProfileProvider);
+        when(userProfileProvider.create(UserProfileContext.REGISTRATION_USER_CREATION, formData)).thenReturn(userProfile);
+        when(userProfile.create()).thenReturn(userModel);
+
         when(context.getEvent()).thenReturn(eventBuilder);
         when(context.getHttpRequest()).thenReturn(httpRequest);
-        when(userProfileAttributes.getFirstAttribute(UserModel.EMAIL)).thenReturn(email);
-        when(userProfileAttributes.getFirstAttribute(UserModel.USERNAME)).thenReturn(username);
         when(userProfile.getAttributes()).thenReturn(userProfileAttributes);
-        when(AttributeFormDataProcessor.toUserProfile(formData)).thenReturn(userProfile);
+        when(userProfileAttributes.getFirstValue(UserModel.EMAIL)).thenReturn(email);
+        when(userProfileAttributes.getFirstValue(UserModel.USERNAME)).thenReturn(username);
         when(context.getAuthenticatorConfig()).thenReturn(authenticatorConfigModel);
         when(authenticatorConfigModel.getConfig()).thenReturn(config);
         when(context.getRealm()).thenReturn(realm);
@@ -84,6 +89,8 @@ public class RegistrationUserCreationPrefixedTest {
         when(authenticationSessionModel.getClient()).thenReturn(clientModel);
         when(clientModel.getClientId()).thenReturn("xyz");
         when(authenticationSessionModel.getRedirectUri()).thenReturn("xyz");
+        when(eventBuilder.client("xyz")).thenReturn(eventBuilder);
+
 
         doNothing().when(authenticationSessionModel).setClientNote(OIDCLoginProtocol.LOGIN_HINT_PARAM, prefixedUsername);
 

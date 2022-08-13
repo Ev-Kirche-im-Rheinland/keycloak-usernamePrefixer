@@ -1,0 +1,20 @@
+version: "3.3"
+
+services:
+  keycloak:
+    image: quay.io/keycloak/keycloak:18.0.2
+    command:
+      - start-dev
+    environment:
+      KEYCLOAK_ADMIN: "admin"
+      KEYCLOAK_ADMIN_PASSWORD: "1234"
+      DEBUG: "true"
+      DEBUG_PORT: "*:8787"
+      KEYCLOAK_IMPORT: "/opt/jboss/realm.json"
+    ports:
+    - 8080:8080
+    - 5005:8787
+    volumes:
+    - ./target/libs/RegistrationUserCreationPrefixed-1.1.jar:/opt/keycloak/providers/RegistrationUserCreationPrefixed-1.1.jar
+    - ./realm.json:/opt/jboss/realm.json
+
