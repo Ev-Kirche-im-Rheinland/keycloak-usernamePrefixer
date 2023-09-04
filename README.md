@@ -11,3 +11,7 @@ by offering a Replacement to the RegistrationUserCreation Authenticator.
 4. add RegistrationUserCreationPrefix to the flow
 5. move RegistrationUserCreationPrefix to the top of the Form Flow
 5. set the prefix, by configuring the RegistrationUserCreationPrefix Execution
+
+# Issues
+
+Post your issues at https://git.fairkom.net/fairlogin/keycloak-usernamepreifxer/-/issues
